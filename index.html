@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal Kokurikulum</title>
+    <style>
+        /* Design Asas Cantik */
+        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; text-align: center; }
+        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        
+        input { width: 80%; padding: 10px; margin-bottom: 20px; font-size: 16px; border: 1px solid #ddd; border-radius: 4px; }
+        
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
+        th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
+        th { background-color: #2E8B57; color: white; } /* Warna Hijau */
+        tr:nth-child(even) { background-color: #f9f9f9; }
+        tr:hover { background-color: #e8f5e9; }
+        
+        .loading { color: #666; font-style: italic; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h1>Semakan Data Kokurikulum</h1>
+    <p>Masukkan Nama atau No. KP untuk menyemak.</p>
+    
+    <input type="text" id="carian" onkeyup="fungsiCari()" placeholder="Cari nama pelajar...">
+
+    <p id="status" class="loading">Sedang memuatkan data...</p>
+
+    <table id="jadualKoko">
+        </table>
+</div>
+
+<script>
+    // --- RUANGAN EDIT ---
+    // GANTIKAN LINK INI DENGAN LINK CSV TAB 'MASTER' ANDA
+    const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTz7ByPqcp-N3M21Rm-l7wFzdjt7QJ6uxnVCHiyWaMxLQNSCr_lteQPiU2m_eCaoFbjbDwQAcm0ckFW/pub?gid=1931198524&single=true&output=csv'; 
+    // --------------------
+
+    async function mula() {
+        try {
+            const response = await fetch(SHEET_URL);
+            const data = await response.text();
+            
+            // Proses data CSV
+            const rows = data.split('\n').map(row => row.split(','));
+            
+            const table = document.getElementById('jadualKoko');
+            table.innerHTML = ''; // Bersihkan table
+
+            rows.forEach((cols, index) => {
+                // Abaikan baris kosong
+                if (cols.join('').trim() === '') return;
+
+                const tr = document.createElement('tr');
+                
+                cols.forEach(col => {
+                    const cell = index === 0 ? document.createElement('th') : document.createElement('td');
+                    // Buang simbol " jika ada
+                    cell.textContent = col.replace(/^"|"$/g, '').trim();
+                    tr.appendChild(cell);
+                });
+                
+                table.appendChild(tr);
+            });
+
+            document.getElementById('status').style.display = 'none';
+
+        } catch (error) {
+            document.getElementById('status').innerText = 'Gagal ambil data. Pastikan Link CSV betul.';
+        }
+    }
+
+    function fungsiCari() {
+        let input = document.getElementById('carian').value.toUpperCase();
+        let table = document.getElementById('jadualKoko');
+        let tr = table.getElementsByTagName('tr');
+
+        // Mula dari i=1 supaya tajuk (header) tak hilang
+        for (let i = 1; i < tr.length; i++) {
+            let baris = tr[i].textContent.toUpperCase();
+            if (baris.indexOf(input) > -1) {
+                tr[i].style.display = "";
+            } else {
+                tr[i].style.display = "none";
+            }
+        }
+    }
+
+    // Jalankan fungsi
+    mula();
+</script>
+
+</body>
+</html>
