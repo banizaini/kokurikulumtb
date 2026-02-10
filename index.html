@@ -3,96 +3,160 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Portal Kokurikulum</title>
+    <title>Sistem Dashboard Koku | SMKA Tok Bachok</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+
     <style>
-        /* Design Asas Cantik */
-        body { font-family: sans-serif; background: #f4f4f9; padding: 20px; text-align: center; }
-        .container { max-width: 900px; margin: auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        
-        input { width: 80%; padding: 10px; margin-bottom: 20px; font-size: 16px; border: 1px solid #ddd; border-radius: 4px; }
-        
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 14px; }
-        th, td { border: 1px solid #eee; padding: 10px; text-align: left; }
-        th { background-color: #2E8B57; color: white; } /* Warna Hijau */
-        tr:nth-child(even) { background-color: #f9f9f9; }
-        tr:hover { background-color: #e8f5e9; }
-        
-        .loading { color: #666; font-style: italic; }
+        .geo-bg {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1; background-color: #0f172a; overflow: hidden;
+        }
+        .shape {
+            position: absolute; filter: blur(70px); opacity: 0.3; animation: move 15s infinite alternate;
+        }
+        @keyframes move {
+            from { transform: translate(0,0) scale(1); }
+            to { transform: translate(50px, 100px) scale(1.2); }
+        }
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .active-tab {
+            border-bottom: 4px solid #34d399;
+            background: rgba(52, 211, 153, 0.1);
+        }
     </style>
 </head>
-<body>
+<body class="text-slate-200">
 
-<div class="container">
-    <h1>Semakan Data Kokurikulum</h1>
-    <p>Masukkan Nama atau No. KP untuk menyemak.</p>
-    
-    <input type="text" id="carian" onkeyup="fungsiCari()" placeholder="Cari nama pelajar...">
+    <div class="geo-bg">
+        <div class="shape bg-blue-600 w-96 h-96 -top-20 -left-20"></div>
+        <div class="shape bg-emerald-600 w-80 h-80 bottom-0 right-0"></div>
+    </div>
 
-    <p id="status" class="loading">Sedang memuatkan data...</p>
+    <div class="container mx-auto px-4 py-10 max-w-6xl">
+        <div class="text-center mb-10">
+            <h1 class="text-4xl font-black tracking-tighter text-white">SMKA TOK BACHOK</h1>
+            <p class="text-emerald-400 font-bold tracking-[0.2em] text-sm">DASHBOARD PENGURUSAN KOKURIKULUM</p>
+        </div>
 
-    <table id="jadualKoko">
-        </table>
-</div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div class="glass p-6 rounded-3xl text-center">
+                <p class="text-xs text-slate-400 uppercase">Status Sistem</p>
+                <p class="text-xl font-bold text-emerald-400">AKTIF / LIVE</p>
+            </div>
+            <div class="glass p-6 rounded-3xl text-center">
+                <p class="text-xs text-slate-400 uppercase">Tahun</p>
+                <p class="text-xl font-bold">2024 / 2025</p>
+            </div>
+            <div class="glass p-6 rounded-3xl text-center">
+                <p class="text-xs text-slate-400 uppercase">Kemaskini Terakhir</p>
+                <p class="text-xl font-bold" id="last-update">-</p>
+            </div>
+        </div>
 
-<script>
-    // --- RUANGAN EDIT ---
-    // GANTIKAN LINK INI DENGAN LINK CSV TAB 'MASTER' ANDA
-    const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTz7ByPqcp-N3M21Rm-l7wFzdjt7QJ6uxnVCHiyWaMxLQNSCr_lteQPiU2m_eCaoFbjbDwQAcm0ckFW/pub?gid=1931198524&single=true&output=csv'; 
-    // --------------------
+        <div class="flex flex-col md:flex-row gap-4 mb-8">
+            <button onclick="muatData('uniform')" id="btn-uniform" class="flex-1 glass p-5 rounded-2xl font-bold hover:scale-105 transition-all duration-300">
+                <i class="fas fa-shield-alt mb-2 text-blue-400 block"></i> BADAN BERUNIFORM
+            </button>
+            <button onclick="muatData('kelab')" id="btn-kelab" class="flex-1 glass p-5 rounded-2xl font-bold hover:scale-105 transition-all duration-300">
+                <i class="fas fa-users mb-2 text-emerald-400 block"></i> KELAB & PERSATUAN
+            </button>
+            <button onclick="muatData('sukan')" id="btn-sukan" class="flex-1 glass p-5 rounded-2xl font-bold hover:scale-105 transition-all duration-300">
+                <i class="fas fa-running mb-2 text-purple-400 block"></i> SUKAN & PERMAINAN
+            </button>
+        </div>
 
-    async function mula() {
-        try {
-            const response = await fetch(SHEET_URL);
-            const data = await response.text();
+        <div class="glass rounded-3xl overflow-hidden min-h-[500px]">
+            <div id="loading" class="hidden p-20 text-center">
+                <i class="fas fa-circle-notch fa-spin text-4xl text-emerald-400 mb-4"></i>
+                <p>Menyinkron data dari Google Sheets...</p>
+            </div>
             
-            // Proses data CSV
-            const rows = data.split('\n').map(row => row.split(','));
+            <div id="data-display" class="p-6 md:p-10">
+                <div class="text-center py-20 opacity-50">
+                    <i class="fas fa-arrow-up text-5xl mb-4"></i>
+                    <p class="text-xl">Sila pilih unit untuk paparan senarai ahli</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // MASUKKAN LINK CSV ANDA DI SINI
+        const csvLinks = {
+            uniform: 'LINK_CSV_TAB_UNIFORM',
+            kelab: 'LINK_CSV_TAB_KELAB',
+            sukan: 'LINK_CSV_TAB_SUKAN'
+        };
+
+        async function muatData(unit) {
+            const display = document.getElementById('data-display');
+            const loading = document.getElementById('loading');
             
-            const table = document.getElementById('jadualKoko');
-            table.innerHTML = ''; // Bersihkan table
+            // Set butang aktif
+            document.querySelectorAll('button').forEach(b => b.classList.remove('active-tab'));
+            document.getElementById('btn-' + unit).classList.add('active-tab');
 
-            rows.forEach((cols, index) => {
-                // Abaikan baris kosong
-                if (cols.join('').trim() === '') return;
+            display.classList.add('hidden');
+            loading.classList.remove('hidden');
 
-                const tr = document.createElement('tr');
-                
-                cols.forEach(col => {
-                    const cell = index === 0 ? document.createElement('th') : document.createElement('td');
-                    // Buang simbol " jika ada
-                    cell.textContent = col.replace(/^"|"$/g, '').trim();
-                    tr.appendChild(cell);
-                });
-                
-                table.appendChild(tr);
+            // Gunakan PapaParse untuk tarik data
+            Papa.parse(csvLinks[unit], {
+                download: true,
+                header: true,
+                complete: function(results) {
+                    const data = results.data;
+                    let tableHTML = `
+                        <div class="mb-6 flex justify-between items-end">
+                            <h2 class="text-3xl font-black uppercase">${unit.replace('_', ' ')}</h2>
+                            <p class="text-emerald-400 font-bold">JUMLAH: ${data.length} AHLI</p>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead class="border-b border-slate-700 text-slate-400">
+                                    <tr>
+                                        <th class="py-4 px-2">BIL</th>
+                                        <th class="py-4 px-2">NAMA MURID</th>
+                                        <th class="py-4 px-2 text-center">KELAS</th>
+                                        <th class="py-4 px-2">NAMA UNIT</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-800">
+                    `;
+
+                    data.forEach((row, index) => {
+                        // Pastikan nama kolum (NAMA, KELAS, UNIT) sama dengan dalam Google Sheet anda
+                        if(row.NAMA) { 
+                            tableHTML += `
+                                <tr class="hover:bg-white/5 transition">
+                                    <td class="py-4 px-2 text-slate-500 text-sm">${index + 1}</td>
+                                    <td class="py-4 px-2 font-semibold text-white">${row.NAMA}</td>
+                                    <td class="py-4 px-2 text-center">${row.KELAS}</td>
+                                    <td class="py-4 px-2 text-emerald-400 text-sm">${row.UNIT}</td>
+                                </tr>
+                            `;
+                        }
+                    });
+
+                    tableHTML += `</tbody></table></div>`;
+                    display.innerHTML = tableHTML;
+                    
+                    loading.classList.add('hidden');
+                    display.classList.remove('hidden');
+                    document.getElementById('last-update').innerText = new Date().toLocaleTimeString();
+                },
+                error: function() {
+                    display.innerHTML = "<p class='text-center text-red-400 p-10'>Ralat: Sila pastikan link CSV betul dan Google Sheet telah di-Publish.</p>";
+                    loading.classList.add('hidden');
+                    display.classList.remove('hidden');
+                }
             });
-
-            document.getElementById('status').style.display = 'none';
-
-        } catch (error) {
-            document.getElementById('status').innerText = 'Gagal ambil data. Pastikan Link CSV betul.';
         }
-    }
-
-    function fungsiCari() {
-        let input = document.getElementById('carian').value.toUpperCase();
-        let table = document.getElementById('jadualKoko');
-        let tr = table.getElementsByTagName('tr');
-
-        // Mula dari i=1 supaya tajuk (header) tak hilang
-        for (let i = 1; i < tr.length; i++) {
-            let baris = tr[i].textContent.toUpperCase();
-            if (baris.indexOf(input) > -1) {
-                tr[i].style.display = "";
-            } else {
-                tr[i].style.display = "none";
-            }
-        }
-    }
-
-    // Jalankan fungsi
-    mula();
-</script>
-
+    </script>
 </body>
 </html>
